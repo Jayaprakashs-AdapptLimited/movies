@@ -50,25 +50,32 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-  // Structrual Components
+// Structrual Components
 export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
 
   return (
     <>
-      <Navbar movies={movies} />
-      <Main movies={movies} />
+      <Navbar>
+        <NumResults movies={movies} />
+      </Navbar>
+      <Main>
+        <MoviesListBox>
+          <MovieList movies={movies} />
+        </MoviesListBox>
+        <WatchedMoviesListBox />
+      </Main>
     </>
   );
 }
 
-  // Structrual Components
-function Navbar({movies}) {
+// Structrual Components
+function Navbar({ children }) {
   return (
     <nav className="nav-bar">
       <Logo />
       <Input />
-      <NumResults movies={movies} />
+      {children}
     </nav>
   );
 }
@@ -99,7 +106,7 @@ function Input() {
 }
 
 // Stateless / Presentational Components
-function NumResults({movies}) {
+function NumResults({ movies }) {
   return (
     <p className="num-results">
       Found <strong>{movies.length} </strong> results
@@ -107,19 +114,14 @@ function NumResults({movies}) {
   );
 }
 
-  // Structrual Components
-function Main({movies}) {
-  return (
-    <main className="main">
-      <MoviesListBox movies={movies} />
-      <WatchedMoviesListBox />
-    </main>
-  );
+// Structrual Components
+function Main({ children }) {
+  return <main className="main">{children}</main>;
 }
 
 // Stateful Components
 
-function MoviesListBox({movies}) {
+function MoviesListBox({ children }) {
   const [isOpen1, setIsOpen1] = useState(true);
 
   return (
@@ -130,14 +132,14 @@ function MoviesListBox({movies}) {
       >
         {isOpen1 ? "–" : "+"}
       </button>
-      {isOpen1 && <MovieList movies={movies} />}
+      {isOpen1 && children}
     </div>
   );
 }
 
 // Stateful Components
 
-function MovieList({movies}) {
+function MovieList({ movies }) {
   return (
     <ul className="list">
       {movies?.map((movie) => (
@@ -148,19 +150,19 @@ function MovieList({movies}) {
 }
 
 // Stateless / Presentational Components
-function Movie({movie}) {
+function Movie({ movie }) {
   return (
-    <li >
-          <img src={movie.Poster} alt={`${movie.Title} poster`} />
-          <h3>{movie.Title}</h3>
-          <div>
-            <p>
-              <span>🗓</span>
-              <span>{movie.Year}</span>
-            </p>
-          </div>
-        </li>
-  )
+    <li>
+      <img src={movie.Poster} alt={`${movie.Title} poster`} />
+      <h3>{movie.Title}</h3>
+      <div>
+        <p>
+          <span>🗓</span>
+          <span>{movie.Year}</span>
+        </p>
+      </div>
+    </li>
+  );
 }
 
 // Stateful Components
@@ -168,7 +170,6 @@ function WatchedMoviesListBox() {
   const [isOpen2, setIsOpen2] = useState(true);
   const [watched, setWatched] = useState(tempWatchedData);
 
-  
   return (
     <div className="box">
       <button
@@ -179,9 +180,8 @@ function WatchedMoviesListBox() {
       </button>
       {isOpen2 && (
         <>
-          
           <WatchSummary watched={watched} />
-          <WatchedList watched={watched} key={watched.imdbID}/>
+          <WatchedList watched={watched} key={watched.imdbID} />
         </>
       )}
     </div>
@@ -189,66 +189,66 @@ function WatchedMoviesListBox() {
 }
 
 // Stateless / Presentational components
-function WatchSummary({watched}) {
+function WatchSummary({ watched }) {
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
   return (
     <div className="summary">
-            <h2>Movies you watched</h2>
-            <div>
-              <p>
-                <span>#️⃣</span>
-                <span>{watched.length} movies</span>
-              </p>
-              <p>
-                <span>⭐️</span>
-                <span>{avgImdbRating}</span>
-              </p>
-              <p>
-                <span>🌟</span>
-                <span>{avgUserRating}</span>
-              </p>
-              <p>
-                <span>⏳</span>
-                <span>{avgRuntime} min</span>
-              </p>
-            </div>
+      <h2>Movies you watched</h2>
+      <div>
+        <p>
+          <span>#️⃣</span>
+          <span>{watched.length} movies</span>
+        </p>
+        <p>
+          <span>⭐️</span>
+          <span>{avgImdbRating}</span>
+        </p>
+        <p>
+          <span>🌟</span>
+          <span>{avgUserRating}</span>
+        </p>
+        <p>
+          <span>⏳</span>
+          <span>{avgRuntime} min</span>
+        </p>
+      </div>
     </div>
-  )
+  );
 }
 
 // Stateless / Presentational Components
-function WatchedList({watched}) {
+function WatchedList({ watched }) {
   return (
     <ul className="list">
-            {watched.map((movie) => (
-              <WatchedMovie movie={movie} key={movie.imdbID}/> 
-            ))}
-          </ul>
-  )
+      {watched.map((movie) => (
+        <WatchedMovie movie={movie} key={movie.imdbID} />
+      ))}
+    </ul>
+  );
 }
 
 // Stateless / Presentational Components
-function WatchedMovie({movie}) {
+function WatchedMovie({ movie }) {
   return (
     <li key={movie.imdbID}>
-                <img src={movie.Poster} alt={`${movie.Title} poster`} />
-                <h3>{movie.Title}</h3>
-                <div>
-                  <p>
-                    <span>⭐️</span>
-                    <span>{movie.imdbRating}</span>
-                  </p>
-                  <p>
-                    <span>🌟</span>
-                    <span>{movie.userRating}</span>
-                  </p>
-                  <p>
-                    <span>⏳</span>
-                    <span>{movie.runtime} min</span>
-                  </p>
-                </div>
-              </li>
-  )
+      <img src={movie.Poster} alt={`${movie.Title} poster`} />
+      <h3>{movie.Title}</h3>
+      <div>
+        <p>
+          <span>⭐️</span>
+          <span>{movie.imdbRating}</span>
+        </p>
+        <p>
+          <span>🌟</span>
+          <span>{movie.userRating}</span>
+        </p>
+        <p>
+          <span>⏳</span>
+          <span>{movie.runtime} min</span>
+        </p>
+      </div>
+    </li>
+  );
 }
