@@ -86,6 +86,10 @@ export default function App() {
   function handleCloseMovie() {
     setSelectedId(null);
   }
+
+  function handleAddWatchedMovie(movie) {
+    setWatched(watched => [...watched, movie])
+  }
   useEffect(
     function () {
       async function getMovies() {
@@ -130,6 +134,7 @@ export default function App() {
             <MovieDetail
               selectedId={selectedId}
               onCloseMovie={handleCloseMovie}
+              onAddWatched={handleAddWatchedMovie}
             />
           ) : (
             <>
@@ -261,9 +266,10 @@ function Movie({ movie, onSelectMovie }) {
   );
 }
 
-function MovieDetail({ selectedId, onCloseMovie }) {
+function MovieDetail({ selectedId, onCloseMovie, onAddWatched }) {
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [userRating, setUserRating] = useState('');
 
   const {
     Title: title,
@@ -278,7 +284,19 @@ function MovieDetail({ selectedId, onCloseMovie }) {
     imdbRating,
   } = movie;
 
-  console.log(title, year);
+  function handleAdd() {
+    const newWatchedMovie = {
+      imdbID: selectedId,
+      title,
+      year,
+      poster,
+      imdbRating: Number(imdbRating), 
+      runtime: Number(runtime.split(" ").at(0)),
+      userRating,
+    }
+    onAddWatched(newWatchedMovie);
+    onCloseMovie();
+  }
   useEffect(
     function () {
       async function getMovieDetail() {
@@ -320,8 +338,10 @@ function MovieDetail({ selectedId, onCloseMovie }) {
           </header>
           <section>
             <div className="rating">
-              <StarRating maxRating={10} />
+              <StarRating maxRating={10} onSetRating={setUserRating} />
             </div>
+            {userRating > 0 && (<button className="btn-add" onClick={handleAdd}> + Add Watch</button>)}
+            
             <p>
               <em>{plot}</em>
             </p>
@@ -336,7 +356,7 @@ function MovieDetail({ selectedId, onCloseMovie }) {
 
 // Stateless / Presentational components
 function WatchSummary({ watched }) {
-  const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
+  const avgImdbRating = Math.floor(average(watched.map((movie) => movie.imdbRating)));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
   return (
@@ -379,8 +399,8 @@ function WatchedList({ watched }) {
 function WatchedMovie({ movie }) {
   return (
     <li key={movie.imdbID}>
-      <img src={movie.Poster} alt={`${movie.Title} poster`} />
-      <h3>{movie.Title}</h3>
+      <img src={movie.poster} alt={`${movie.title} poster`} />
+      <h3>{movie.title}</h3>
       <div>
         <p>
           <span>⭐️</span>
