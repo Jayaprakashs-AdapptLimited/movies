@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StarRating from "./StarRating";
 
 const tempMovieData = [
   {
@@ -50,34 +51,92 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const key = "f84fc31d";
+const key = "a8447d32";
 
 // Structrual Components
 export default function App() {
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState("");
+  const tempQuery = "Inception";
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+
+  /*
+  useEffect(function() {
+    console.log("After initial render");
+  }, [])
 
   useEffect(function() {
-    fetch(`http://www.omdbapi.com/?apikey=${key}&s=Inception`)
-    .then((res) => res.json())
-    .then((data) => setMovies(data.Search));
-  }, []);
+    console.log("After every render");
+  })
 
-  
+  useEffect(function() {
+    console.log("After state update");
+  },[query])
+
+  console.log("During render");
+*/
+
+  function handleSelectMovie(id) {
+    setSelectedId((selectedId) => (selectedId === id ? null : id));
+  }
+
+  function handleCloseMovie() {
+    setSelectedId(null);
+  }
+  useEffect(
+    function () {
+      async function getMovies() {
+        try {
+          setIsLoading(true);
+          const response = await fetch(
+            `http://www.omdbapi.com/?apikey=${key}&s=${query}`
+          );
+          if (!response.ok)
+            throw new Error("Something went wrong with fetching movies");
+
+          const data = await response.json();
+          // console.log(data.Search);
+          setMovies(data.Search);
+          setIsLoading(false);
+        } catch (err) {
+          console.error(err.message);
+        }
+      }
+      getMovies();
+    },
+    [query]
+  );
 
   return (
     <>
       <Navbar>
+        <Input query={query} setQuery={setQuery} />
         <NumResults movies={movies} />
       </Navbar>
       <Main>
         <Box>
-          <MovieList movies={movies} />
+          {isLoading ? (
+            <Loader />
+          ) : (
+            <MovieList movies={movies} onSelectMovie={handleSelectMovie} />
+          )}
         </Box>
 
         <Box>
-          <WatchSummary watched={watched} />
-          <WatchedList watched={watched} key={watched.imdbID} />
+          {selectedId ? (
+            <MovieDetail
+              selectedId={selectedId}
+              onCloseMovie={handleCloseMovie}
+            />
+          ) : (
+            <>
+              <WatchSummary watched={watched} />
+              <WatchedList watched={watched} key={watched.imdbID} />
+            </>
+          )}
         </Box>
       </Main>
     </>
@@ -89,7 +148,6 @@ function Navbar({ children }) {
   return (
     <nav className="nav-bar">
       <Logo />
-      <Input />
       {children}
     </nav>
   );
@@ -106,9 +164,7 @@ function Logo() {
 }
 
 // Stateful Components
-function Input() {
-  const [query, setQuery] = useState("");
-
+function Input({ query, setQuery }) {
   return (
     <input
       className="search"
@@ -124,7 +180,7 @@ function Input() {
 function NumResults({ movies }) {
   return (
     <p className="num-results">
-      Found <strong>{movies.length} </strong> results
+      Found <strong>{movies?.length} </strong> results
     </p>
   );
 }
@@ -174,20 +230,25 @@ function Box({ children }) {
 
 // Stateful Components
 
-function MovieList({ movies }) {
+function Loader() {
+  return <p className="loader"> Loading...</p>;
+}
+
+function MovieList({ movies, onSelectMovie }) {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID} />
+        <Movie movie={movie} key={movie.imdbID} onSelectMovie={onSelectMovie} />
       ))}
     </ul>
   );
 }
 
 // Stateless / Presentational Components
-function Movie({ movie }) {
+function Movie({ movie, onSelectMovie }) {
+  console.log(movie);
   return (
-    <li>
+    <li onClick={() => onSelectMovie(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
@@ -197,6 +258,79 @@ function Movie({ movie }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function MovieDetail({ selectedId, onCloseMovie }) {
+  const [movie, setMovie] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    Title: title,
+    Year: year,
+    Poster: poster,
+    Runtime: runtime,
+    Released: released,
+    Actors: actors,
+    Director: director,
+    Genre: genre,
+    Plot: plot,
+    imdbRating,
+  } = movie;
+
+  console.log(title, year);
+  useEffect(
+    function () {
+      async function getMovieDetail() {
+        setIsLoading(true);
+        const response = await fetch(
+          `http://www.omdbapi.com/?apikey=${key}&i=${selectedId}`
+        );
+        const data = await response.json();
+        console.log(data);
+        setMovie(data);
+        setIsLoading(false);
+      }
+      getMovieDetail();
+    },
+    [selectedId]
+  );
+  return (
+    <div className="details">
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <>
+          <header>
+            <button className="btn-back" onClick={onCloseMovie}>
+              &larr;
+            </button>
+            <img src={poster} alt={`Poster of ${movie} movie`} />
+            <div className="details-overview">
+              <h2>{title}</h2>
+              <p>
+                {released} &bull; {runtime}
+              </p>
+              <p>{genre}</p>
+              <p>
+                <span>⭐️</span>
+                {imdbRating} IMDb rating
+              </p>
+            </div>
+          </header>
+          <section>
+            <div className="rating">
+              <StarRating maxRating={10} />
+            </div>
+            <p>
+              <em>{plot}</em>
+            </p>
+            <p>Starring {actors}</p>
+            <p>Directed by {director}</p>
+          </section>
+        </>
+      )}
+    </div>
   );
 }
 
